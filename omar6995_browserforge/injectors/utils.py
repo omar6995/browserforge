@@ -3,7 +3,7 @@ from pathlib import Path
 from random import randrange
 from typing import Dict, Optional, Set
 
-from browserforge.fingerprints import Fingerprint, FingerprintGenerator
+from omar6995_browserforge.fingerprints import Fingerprint, FingerprintGenerator
 
 UTILS_JS: Path = Path(__file__).parent / 'data/utils.js.xz'
 

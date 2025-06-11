@@ -1,4 +1,4 @@
-from browserforge.injectors.utils import CheckIfInstalled
+from omar6995_browserforge.injectors.utils import CheckIfInstalled
 
 CheckIfInstalled('playwright')
 

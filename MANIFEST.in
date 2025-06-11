@@ -1,9 +1,9 @@
 include README.md
 include LICENSE
 include pyproject.toml
-recursive-include browserforge *.py
-recursive-include browserforge/fingerprints *
-recursive-include browserforge/headers *
-recursive-include browserforge/injectors *
+recursive-include omar6995_browserforge *.py
+recursive-include omar6995_browserforge/fingerprints *
+recursive-include omar6995_browserforge/headers *
+recursive-include omar6995_browserforge/injectors *
 global-exclude *.pyc
 global-exclude __pycache__/* 

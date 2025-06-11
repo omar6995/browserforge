@@ -1,8 +1,8 @@
-from browserforge.download import DownloadIfNotExists
+from omar6995_browserforge.download import DownloadIfNotExists
 
 DownloadIfNotExists(fingerprints=True, headers=True)
 
-from browserforge.headers import Browser
+from omar6995_browserforge.headers import Browser
 
 from .generator import (
     Fingerprint,

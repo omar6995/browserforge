@@ -4,8 +4,8 @@ from typing import Dict, Optional
 from pyppeteer.browser import Browser
 from pyppeteer.page import Page
 
-from browserforge.fingerprints import Fingerprint
-from browserforge.injectors.utils import InjectFunction, _fingerprint, only_injectable_headers
+from omar6995_browserforge.fingerprints import Fingerprint
+from omar6995_browserforge.injectors.utils import InjectFunction, _fingerprint, only_injectable_headers
 
 
 async def NewPage(

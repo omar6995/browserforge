@@ -1,4 +1,4 @@
-from browserforge.download import DownloadIfNotExists
+from omar6995_browserforge.download import DownloadIfNotExists
 
 DownloadIfNotExists(headers=True)
 

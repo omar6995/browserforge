@@ -1,6 +1,6 @@
 import click
 
-from browserforge.download import Download, Remove
+from omar6995_browserforge.download import Download, Remove
 
 
 class DownloadException(Exception):

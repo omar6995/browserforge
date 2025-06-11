@@ -1,4 +1,4 @@
-# browserforge package initialization
+# omar6995-browserforge package initialization
 from . import download
 from .download import Download, DownloadIfNotExists, IsDownloaded, Remove
 

@@ -2,9 +2,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from browserforge.bayesian_network import BayesianNetwork, get_possible_values
-from browserforge.headers import HeaderGenerator
-from browserforge.headers.utils import get_user_agent
+from omar6995_browserforge.bayesian_network import BayesianNetwork, get_possible_values
+from omar6995_browserforge.headers import HeaderGenerator
+from omar6995_browserforge.headers.utils import get_user_agent
 
 try:
     import orjson as json

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union
 
-from browserforge.bayesian_network import BayesianNetwork, get_possible_values
+from omar6995_browserforge.bayesian_network import BayesianNetwork, get_possible_values
 
 from .utils import get_browser, get_user_agent, pascalize_headers, tuplify
 
