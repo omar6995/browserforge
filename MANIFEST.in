@@ -5,5 +5,9 @@ recursive-include omar6995_browserforge *.py
 recursive-include omar6995_browserforge/fingerprints *
 recursive-include omar6995_browserforge/headers *
 recursive-include omar6995_browserforge/injectors *
+# Ensure data directories are included even if empty
+recursive-include omar6995_browserforge/headers/data *
+recursive-include omar6995_browserforge/fingerprints/data *
+recursive-include omar6995_browserforge/injectors/data *
 global-exclude *.pyc
 global-exclude __pycache__/* 

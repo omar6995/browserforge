@@ -11,6 +11,11 @@ license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/omar6995/browserforge"
 packages = [{include = "omar6995_browserforge"}]
+include = [
+    "omar6995_browserforge/headers/data/**/*",
+    "omar6995_browserforge/fingerprints/data/**/*",
+    "omar6995_browserforge/injectors/data/**/*"
+]
 keywords = [
     "client",
     "headers",

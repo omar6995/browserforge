@@ -52,6 +52,9 @@ class DataDownloader:
         """
         Download a file from the specified URL and save it to the given path.
         """
+        # Ensure the directory exists
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        
         with urllib.request.urlopen(url) as resp:  # nosec
             if resp.status != 200:
                 raise DownloadException(f"Download failed with status code: {resp.status}")
