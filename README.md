@@ -149,7 +149,7 @@ headers = HeaderGenerator(
 
 #### Browser specifications
 
-Set specificiations for browsers, including version ranges and HTTP version:
+Set specifications for browsers, including version ranges and HTTP version:
 
 ```py
 from browserforge.headers import Browser
@@ -160,6 +160,27 @@ browsers = [
     Browser(name='edge', min_version=95),
 ]
 headers = HeaderGenerator(browser=browsers)
+```
+
+##### Minor Version Support
+
+The library now supports minor version constraints using multiple formats:
+
+```py
+# Major version only (existing behavior)
+Browser(name='safari', max_version=18)  # Allows 18.x.x
+
+# Minor version with float
+Browser(name='safari', max_version=18.4)  # Allows up to 18.4.x, blocks 18.5+
+
+# Semantic versioning with string
+Browser(name='safari', max_version="18.4.1")  # Allows up to 18.4.1
+
+# Programmatic with tuple
+Browser(name='safari', max_version=(18, 4, 1))  # Allows up to 18.4.1
+
+# Version ranges
+Browser(name='safari', min_version=17.5, max_version=18.4)  # 17.5 to 18.4
 ```
 
 Note that all constraints passed into the `HeaderGenerator` constructor can be overridden by passing them into the `generate` method.

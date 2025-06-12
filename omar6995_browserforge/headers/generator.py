@@ -39,28 +39,117 @@ DATA_DIR: Path = Path(__file__).parent / 'data'
 ListOrString: TypeAlias = Union[Tuple[str, ...], List[str], str]
 
 
+def _parse_version(version: Union[int, float, str, Tuple[int, ...], None]) -> Optional[Tuple[int, ...]]:
+    """
+    Parse various version formats into a tuple of integers.
+    
+    Args:
+        version: Version in various formats (int, float, str, tuple, or None)
+        
+    Returns:
+        Tuple of integers representing the version, or None if input is None
+        
+    Examples:
+        _parse_version(18) -> (18,)
+        _parse_version(18.4) -> (18, 4)
+        _parse_version("18.4.1") -> (18, 4, 1)
+        _parse_version((18, 4)) -> (18, 4)
+    """
+    if version is None:
+        return None
+    
+    if isinstance(version, tuple):
+        return version
+    
+    if isinstance(version, int):
+        return (version,)
+    
+    if isinstance(version, float):
+        # Handle float like 18.4 -> (18, 4)
+        version_str = str(version)
+        parts = version_str.split('.')
+        return tuple(int(part) for part in parts)
+    
+    if isinstance(version, str):
+        parts = version.split('.')
+        return tuple(int(part) for part in parts)
+    
+    raise ValueError(f"Unsupported version format: {version}")
+
+
+def _compare_versions(version1: Tuple[int, ...], version2: Tuple[int, ...]) -> int:
+    """
+    Compare two version tuples.
+    
+    Args:
+        version1: First version tuple
+        version2: Second version tuple
+        
+    Returns:
+        -1 if version1 < version2
+         0 if version1 == version2
+         1 if version1 > version2
+    """
+    # Pad shorter version with zeros for comparison
+    max_len = max(len(version1), len(version2))
+    v1_padded = version1 + (0,) * (max_len - len(version1))
+    v2_padded = version2 + (0,) * (max_len - len(version2))
+    
+    if v1_padded < v2_padded:
+        return -1
+    elif v1_padded > v2_padded:
+        return 1
+    else:
+        return 0
+
+
 @dataclass
 class Browser:
     """Represents a browser specification with name, min/max version, and HTTP version"""
 
     name: str
-    min_version: Optional[int] = None
-    max_version: Optional[int] = None
+    min_version: Optional[Union[int, float, str, Tuple[int, ...]]] = None
+    max_version: Optional[Union[int, float, str, Tuple[int, ...]]] = None
     http_version: Union[str, int] = '2'
 
     def __post_init__(self):
-        # Convert http_version to
+        # Convert http_version to string
         if isinstance(self.http_version, int):
             self.http_version = str(self.http_version)
+        
+        # Parse versions
+        self._min_version_tuple = _parse_version(self.min_version)
+        self._max_version_tuple = _parse_version(self.max_version)
+        
         # Confirm min_version < max_version
         if (
-            isinstance(self.min_version, int)
-            and isinstance(self.max_version, int)
-            and self.min_version > self.max_version
+            self._min_version_tuple is not None
+            and self._max_version_tuple is not None
+            and _compare_versions(self._min_version_tuple, self._max_version_tuple) > 0
         ):
             raise ValueError(
                 f'Browser min version constraint ({self.min_version}) cannot exceed max version ({self.max_version})'
             )
+
+    def version_matches(self, version: Tuple[int, ...]) -> bool:
+        """
+        Check if a given version matches this browser's version constraints.
+        
+        Args:
+            version: Version tuple to check
+            
+        Returns:
+            True if version matches constraints, False otherwise
+        """
+        if self._min_version_tuple is not None:
+            if _compare_versions(version, self._min_version_tuple) < 0:
+                return False
+        
+        if self._max_version_tuple is not None:
+            if _compare_versions(version, self._max_version_tuple) > 0:
+                return False
+        
+        return True
 
 
 @dataclass
@@ -336,8 +425,7 @@ class HeaderGenerator:
             for browser in browsers
             for browser_option in self.unique_browsers
             if browser.name == browser_option.name
-            and (not browser.min_version or browser.min_version <= browser_option.version[0])
-            and (not browser.max_version or browser.max_version >= browser_option.version[0])
+            and browser.version_matches(browser_option.version)
             and (not browser.http_version or browser.http_version == browser_option.http_version)
         ]
 
