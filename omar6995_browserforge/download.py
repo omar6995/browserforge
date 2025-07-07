@@ -1,4 +1,6 @@
 import shutil
+import socket
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
@@ -51,15 +53,35 @@ class DataDownloader:
     def download_file(self, url: str, path: str) -> None:
         """
         Download a file from the specified URL and save it to the given path.
+        Retries up to 10 times on timeout errors.
         """
         # Ensure the directory exists
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         
-        with urllib.request.urlopen(url) as resp:  # nosec
-            if resp.status != 200:
-                raise DownloadException(f"Download failed with status code: {resp.status}")
-            with open(path, "wb") as f:
-                shutil.copyfileobj(resp, f)
+        max_retries = 10
+        retry_count = 0
+        
+        while retry_count <= max_retries:
+            try:
+                with urllib.request.urlopen(url, timeout=30) as resp:  # nosec
+                    if resp.status != 200:
+                        raise DownloadException(f"Download failed with status code: {resp.status}")
+                    with open(path, "wb") as f:
+                        shutil.copyfileobj(resp, f)
+                return  # Success, exit the retry loop
+                
+            except (socket.timeout, OSError) as e:
+                retry_count += 1
+                if retry_count > max_retries:
+                    raise DownloadException(f"Download failed after {max_retries} retries due to timeout: {e}")
+                
+                # Wait before retrying (exponential backoff)
+                wait_time = min(2 ** retry_count, 30)  # Cap at 30 seconds
+                time.sleep(wait_time)
+                
+            except Exception as e:
+                # For non-timeout errors, don't retry
+                raise DownloadException(f"Download failed: {e}")
 
     def download(self) -> None:
         """

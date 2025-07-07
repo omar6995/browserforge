@@ -23,7 +23,7 @@ except ImportError:
     # But the download module should still be available
     pass
 
-__version__ = "1.2.7"
+__version__ = "1.2.8"
 
 __all__ = [
     # Download functionality
