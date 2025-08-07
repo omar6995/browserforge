@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.9] - Minor Version Support Update
+## [1.2.10] - Minor Version Support Update
 
 ### ✨ New Features
 
