@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple, Union
 
 from omar6995_browserforge.bayesian_network import BayesianNetwork, get_possible_values
-
+from apify_fingerprint_datapoints import (get_header_network, get_headers_order, get_browser_helper_file,
+                                          get_input_network)
 from .utils import get_browser, get_user_agent, pascalize_headers, tuplify
 
 try:
@@ -35,72 +36,7 @@ HTTP2_SEC_FETCH_ATTRIBUTES = {
     'sec-fetch-site': '?1',
     'sec-fetch-user': 'document',
 }
-DATA_DIR: Path = Path(__file__).parent / 'data'
 ListOrString: TypeAlias = Union[Tuple[str, ...], List[str], str]
-
-
-def _parse_version(version: Union[int, float, str, Tuple[int, ...], None]) -> Optional[Tuple[int, ...]]:
-    """
-    Parse various version formats into a tuple of integers.
-    
-    Args:
-        version: Version in various formats (int, float, str, tuple, or None)
-        
-    Returns:
-        Tuple of integers representing the version, or None if input is None
-        
-    Examples:
-        _parse_version(18) -> (18,)
-        _parse_version(18.4) -> (18, 4)
-        _parse_version("18.4.1") -> (18, 4, 1)
-        _parse_version((18, 4)) -> (18, 4)
-    """
-    if version is None:
-        return None
-    
-    if isinstance(version, tuple):
-        return version
-    
-    if isinstance(version, int):
-        return (version,)
-    
-    if isinstance(version, float):
-        # Handle float like 18.4 -> (18, 4)
-        version_str = str(version)
-        parts = version_str.split('.')
-        return tuple(int(part) for part in parts)
-    
-    if isinstance(version, str):
-        parts = version.split('.')
-        return tuple(int(part) for part in parts)
-    
-    raise ValueError(f"Unsupported version format: {version}")
-
-
-def _compare_versions(version1: Tuple[int, ...], version2: Tuple[int, ...]) -> int:
-    """
-    Compare two version tuples.
-    
-    Args:
-        version1: First version tuple
-        version2: Second version tuple
-        
-    Returns:
-        -1 if version1 < version2
-         0 if version1 == version2
-         1 if version1 > version2
-    """
-    # Pad shorter version with zeros for comparison
-    max_len = max(len(version1), len(version2))
-    v1_padded = version1 + (0,) * (max_len - len(version1))
-    v2_padded = version2 + (0,) * (max_len - len(version2))
-    
-    if v1_padded < v2_padded:
-        return -1
-    elif v1_padded > v2_padded:
-        return 1
-    else:
-        return 0
 
 
 @dataclass
@@ -108,48 +44,23 @@ class Browser:
     """Represents a browser specification with name, min/max version, and HTTP version"""
 
     name: str
-    min_version: Optional[Union[int, float, str, Tuple[int, ...]]] = None
-    max_version: Optional[Union[int, float, str, Tuple[int, ...]]] = None
+    min_version: Optional[int] = None
+    max_version: Optional[int] = None
     http_version: Union[str, int] = '2'
 
     def __post_init__(self):
-        # Convert http_version to string
+        # Convert http_version to
         if isinstance(self.http_version, int):
             self.http_version = str(self.http_version)
-        
-        # Parse versions
-        self._min_version_tuple = _parse_version(self.min_version)
-        self._max_version_tuple = _parse_version(self.max_version)
-        
         # Confirm min_version < max_version
         if (
-            self._min_version_tuple is not None
-            and self._max_version_tuple is not None
-            and _compare_versions(self._min_version_tuple, self._max_version_tuple) > 0
+            isinstance(self.min_version, int)
+            and isinstance(self.max_version, int)
+            and self.min_version > self.max_version
         ):
             raise ValueError(
                 f'Browser min version constraint ({self.min_version}) cannot exceed max version ({self.max_version})'
             )
-
-    def version_matches(self, version: Tuple[int, ...]) -> bool:
-        """
-        Check if a given version matches this browser's version constraints.
-        
-        Args:
-            version: Version tuple to check
-            
-        Returns:
-            True if version matches constraints, False otherwise
-        """
-        if self._min_version_tuple is not None:
-            if _compare_versions(version, self._min_version_tuple) < 0:
-                return False
-        
-        if self._max_version_tuple is not None:
-            if _compare_versions(version, self._max_version_tuple) > 0:
-                return False
-        
-        return True
 
 
 @dataclass
@@ -172,8 +83,8 @@ class HeaderGenerator:
     relaxation_order: Tuple[str, ...] = ('locales', 'devices', 'operatingSystems', 'browsers')
 
     # Initialize networks
-    input_generator_network = BayesianNetwork(DATA_DIR / "input-network.zip")
-    header_generator_network = BayesianNetwork(DATA_DIR / "header-network.zip")
+    input_generator_network = BayesianNetwork(get_input_network())
+    header_generator_network = BayesianNetwork(get_header_network())
 
     def __init__(
         self,
@@ -425,7 +336,8 @@ class HeaderGenerator:
             for browser in browsers
             for browser_option in self.unique_browsers
             if browser.name == browser_option.name
-            and browser.version_matches(browser_option.version)
+            and (not browser.min_version or browser.min_version <= browser_option.version[0])
+            and (not browser.max_version or browser.max_version >= browser_option.version[0])
             and (not browser.http_version or browser.http_version == browser_option.http_version)
         ]
 
@@ -521,8 +433,7 @@ class HeaderGenerator:
         Returns:
             Dict[str, List[str]]: Dictionary of headers order for each browser.
         """
-        headers_order_path = DATA_DIR / "headers-order.json"
-        return json.loads(headers_order_path.read_bytes())
+        return json.loads(get_headers_order().read_bytes())
 
     def _load_unique_browsers(self) -> List[HttpBrowserObject]:
         """
@@ -531,8 +442,7 @@ class HeaderGenerator:
         Returns:
             List[HttpBrowserObject]: List of HttpBrowserObject instances.
         """
-        browser_helper_path = DATA_DIR / 'browser-helper-file.json'
-        unique_browser_strings = json.loads(browser_helper_path.read_bytes())
+        unique_browser_strings = json.loads(get_browser_helper_file().read_bytes())
         return [
             self._prepare_http_browser_object(browser_str)
             for browser_str in unique_browser_strings
